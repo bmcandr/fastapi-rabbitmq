@@ -10,6 +10,6 @@ FROM builder as consumer
 
 RUN python -m pip install .
 
-FROM builder as producer
+FROM builder as producer_consumer
 
-RUN python -m pip install .["producer"]
+RUN python -m pip install .["producer_consumer"]

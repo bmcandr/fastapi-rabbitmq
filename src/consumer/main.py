@@ -14,7 +14,7 @@ logger = logging.getLogger()
 
 PREFECTH_COUNT = 100
 
-APP_URL = "http://producer:8000"
+APP_URL = "http://producer_consumer:8000"
 
 
 async def process_message(message: aio_pika.abc.AbstractIncomingMessage):

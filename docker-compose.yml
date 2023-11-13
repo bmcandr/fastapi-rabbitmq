@@ -17,23 +17,23 @@ services:
         networks:
             - rabbitmq_go_net
 
-    producer:
+    producer_consumer:
         build:
             context: ./
             dockerfile: Dockerfile
-            target: producer
+            target: producer_consumer
         command:
             [
                 "uvicorn",
-                "src.producer.main:app",
+                "src.producer_consumer.main:app",
                 "--host",
                 "0.0.0.0",
                 "--port",
                 "8000",
                 "--reload",
             ]
-        hostname: producer
-        container_name: producer
+        hostname: producer_consumer
+        container_name: producer_consumer
         depends_on:
             rabbitmq:
                 condition: service_healthy
@@ -48,14 +48,14 @@ services:
         networks:
             - rabbitmq_go_net
 
-    consumer_1:
+    consumer:
         build:
             context: ./
             dockerfile: Dockerfile
         command: python -m src.consumer.main
-        container_name: consumer_1
+        container_name: consumer
         depends_on:
-            - producer
+            - producer_consumer
         env_file:
             - .env
         environment:
@@ -63,26 +63,6 @@ services:
             LOGLEVEL: INFO
         ports:
             - "8001:8001"
-        volumes:
-            - ./:/app
-        networks:
-            - rabbitmq_go_net
-
-    consumer_2:
-        build:
-            context: ./
-            dockerfile: Dockerfile
-        command: python -m src.consumer.main
-        container_name: consumer_2
-        depends_on:
-            - consumer_1
-        env_file:
-            - .env
-        ports:
-            - "8002:8002"
-        environment:
-            PYTHONPATH: src
-            LOGLEVEL: INFO
         volumes:
             - ./:/app
         networks:
