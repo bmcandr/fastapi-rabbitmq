@@ -1,0 +1,93 @@
+version: "3.2"
+services:
+    rabbitmq:
+        image: rabbitmq:3-management-alpine
+        container_name: "rabbitmq"
+        ports:
+            - 5672:5672
+            - 15672:15672
+        volumes:
+            - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
+            - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq/
+        healthcheck:
+            test: rabbitmq-diagnostics -q ping
+            interval: 10s
+            timeout: 30s
+            retries: 3
+        networks:
+            - rabbitmq_go_net
+
+    producer:
+        build:
+            context: ./
+            dockerfile: Dockerfile
+            target: producer
+        command:
+            [
+                "uvicorn",
+                "src.producer.main:app",
+                "--host",
+                "0.0.0.0",
+                "--port",
+                "8000",
+                "--reload",
+            ]
+        hostname: producer
+        container_name: producer
+        depends_on:
+            rabbitmq:
+                condition: service_healthy
+        env_file:
+            - .env
+        environment:
+            PYTHONPATH: src
+        ports:
+            - "8000:8000"
+        volumes:
+            - ./:/app
+        networks:
+            - rabbitmq_go_net
+
+    consumer_1:
+        build:
+            context: ./
+            dockerfile: Dockerfile
+        command: python -m src.consumer.main
+        container_name: consumer_1
+        depends_on:
+            - producer
+        env_file:
+            - .env
+        environment:
+            PYTHONPATH: src
+            LOGLEVEL: INFO
+        ports:
+            - "8001:8001"
+        volumes:
+            - ./:/app
+        networks:
+            - rabbitmq_go_net
+
+    consumer_2:
+        build:
+            context: ./
+            dockerfile: Dockerfile
+        command: python -m src.consumer.main
+        container_name: consumer_2
+        depends_on:
+            - consumer_1
+        env_file:
+            - .env
+        ports:
+            - "8002:8002"
+        environment:
+            PYTHONPATH: src
+            LOGLEVEL: INFO
+        volumes:
+            - ./:/app
+        networks:
+            - rabbitmq_go_net
+
+networks:
+    rabbitmq_go_net:
+        driver: bridge
