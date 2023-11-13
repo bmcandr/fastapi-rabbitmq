@@ -77,6 +77,7 @@ async def process_message(message: aio_pika.abc.AbstractIncomingMessage):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """Start internal message consumer on app startup."""
     connection = await aio_pika.connect_robust(str(settings.AMQP_URL))
 
     async with connection:
